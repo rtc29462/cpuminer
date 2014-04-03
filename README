@@ -2,8 +2,9 @@ This is the updated version of CPU Miner to support AdvSHA3 hashing method
 for PurpleCoin.
 
 
-Git tree: https://github.com/mkimid/cpuminer
+Git tree: https://github.com/rtc29462/cpuminer
 
+======================================================================================
 
 This is a multi-threaded CPU miner for Litecoin and Bitcoin,
 and now Quarkcoin, forked from poolers cpuminer which is a
