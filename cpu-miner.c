@@ -101,16 +101,16 @@ struct workio_cmd {
 };
 
 enum sha256_algos {
-	ALGO_SCRYPT,		/* scrypt(1024,1,1) */
-	ALGO_SHA256D,		/* SHA-256d */
-	ALGO_QUARK,
+    ALGO_SCRYPT,		/* scrypt(1024,1,1) */
+    ALGO_SHA256D,		/* SHA-256d */
+    ALGO_QUARK,         /* Quark Coin */
     ALGO_ADVSHA3,       /* Advanced SHA3 */
 };
 
 static const char *algo_names[] = {
-	[ALGO_SCRYPT]		= "scrypt",
-	[ALGO_SHA256D]		= "sha256d",
-	[ALGO_QUARK]		= "quark",
+    [ALGO_SCRYPT]		= "scrypt",
+    [ALGO_SHA256D]		= "sha256d",
+    [ALGO_QUARK]		= "quark",
     [ALGO_ADVSHA3]      = "advsha3",
 };
 
@@ -262,9 +262,7 @@ static struct work g_work;
 static time_t g_work_time;
 static pthread_mutex_t g_work_lock;
 
-static bool jobj_binary(const json_t *obj, const char *key,
-			void *buf, size_t buflen)
-{
+static bool jobj_binary(const json_t *obj, const char *key,	void *buf, size_t buflen) {
 	const char *hexstr;
 	json_t *tmp;
 
@@ -284,8 +282,7 @@ static bool jobj_binary(const json_t *obj, const char *key,
 	return true;
 }
 
-static bool work_decode(const json_t *val, struct work *work)
-{
+static bool work_decode(const json_t *val, struct work *work) {
 	int i;
 
 	if (unlikely(!jobj_binary(val, "data", work->data, sizeof(work->data)))) {
@@ -298,7 +295,7 @@ static bool work_decode(const json_t *val, struct work *work)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(work->data); i++)
-		work->data[i] = le32dec(work->data + i);
+        work->data[i] = le32dec(work->data + i);
 	for (i = 0; i < ARRAY_SIZE(work->target); i++)
 		work->target[i] = le32dec(work->target + i);
 
@@ -308,8 +305,7 @@ err_out:
 	return false;
 }
 
-static void share_result(int result, const char *reason)
-{
+static void share_result(int result, const char *reason) {
 	char s[345];
 	double hashrate;
 	int i;
@@ -333,8 +329,7 @@ static void share_result(int result, const char *reason)
 		applog(LOG_DEBUG, "DEBUG: reject reason: %s", reason);
 }
 
-static bool submit_upstream_work(CURL *curl, struct work *work)
-{
+static bool submit_upstream_work(CURL *curl, struct work *work) {
 	char *str = NULL;
 	json_t *val, *res, *reason;
 	char s[345];
@@ -380,10 +375,15 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 		free(noncestr);
 		free(xnonce2str);
 
+        if (opt_hashdebug) {
+           printf("DEBUG: JSON-RPC Submit for stratum: %s", s);
+        }
+
 		if (unlikely(!stratum_send_line(&stratum, s))) {
 			applog(LOG_ERR, "submit_upstream_work stratum_send_line failed");
 			goto out;
 		}
+
 	} else {
 		/* build hex string */
 		for (i = 0; i < ARRAY_SIZE(work->data); i++)
@@ -398,6 +398,10 @@ static bool submit_upstream_work(CURL *curl, struct work *work)
 		sprintf(s,
 			"{\"method\": \"getwork\", \"params\": [ \"%s\" ], \"id\":1}\r\n",
 			str);
+
+        if (opt_hashdebug) {
+           printf("DEBUG: JSON-RPC Submit: %s", s);
+        }
 
 		/* issue JSON-RPC request */
 		val = json_rpc_call(curl, rpc_url, rpc_userpass, s, false, false, NULL);
@@ -423,25 +427,21 @@ out:
 static const char *rpc_req =
 	"{\"method\": \"getwork\", \"params\": [], \"id\":0}\r\n";
 
-static bool get_upstream_work(CURL *curl, struct work *work)
-{
+static bool get_upstream_work(CURL *curl, struct work *work) {
 	json_t *val;
 	bool rc;
 	struct timeval tv_start, tv_end, diff;
 
 	gettimeofday(&tv_start, NULL);
-	val = json_rpc_call(curl, rpc_url, rpc_userpass, rpc_req,
-			    want_longpoll, false, NULL);
+	val = json_rpc_call(curl, rpc_url, rpc_userpass, rpc_req, want_longpoll, false, NULL);
 	gettimeofday(&tv_end, NULL);
 
 	if (have_stratum) {
-		if (val)
-			json_decref(val);
+		if (val) json_decref(val);
 		return true;
 	}
 
-	if (!val)
-		return false;
+	if (!val) return false;
 
 	rc = work_decode(json_object_get(val, "result"), work);
 
@@ -456,10 +456,9 @@ static bool get_upstream_work(CURL *curl, struct work *work)
 	return rc;
 }
 
-static void workio_cmd_free(struct workio_cmd *wc)
-{
-	if (!wc)
-		return;
+static void workio_cmd_free(struct workio_cmd *wc) {
+
+	if (!wc) return;
 
 	switch (wc->cmd) {
 	case WC_SUBMIT_WORK:
@@ -606,6 +605,15 @@ static bool get_work(struct thr_info *thr, struct work *work)
 	memcpy(work, work_heap, sizeof(*work));
 	free(work_heap);
 
+    if (opt_hashdebug) {
+       int ii = 0;
+       printf ("\n get work data dump =>");
+       for (ii = 0; ii < 128; ii++) {
+		   	printf ("%.2x",((uint8_t * )(work->data))[ii]);
+       }
+       printf ("\n");
+    }
+
 	return true;
 }
 
@@ -683,6 +691,18 @@ static void stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 		diff_to_target(work->target, sctx->job.diff / 65536.0);
 	else
 		diff_to_target(work->target, sctx->job.diff);
+
+    if (opt_hashdebug) {
+       int ii = 0;
+       printf ("\n gen work data dump =>");
+       for (ii = 0; ii < 128; i++) {
+		   	printf ("%.2x",((uint8_t * )(work->data))[ii]);
+       }
+       printf ("\n");
+    }
+
+
+
 }
 
 static void *miner_thread(void *userdata)

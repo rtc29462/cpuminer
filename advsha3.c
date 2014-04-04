@@ -39,6 +39,72 @@
 #include "sph_skein.h"
 
 
+static void advsha3hash_debug(void *state, const void *input) {
+    sph_blake512_context     ctx_blake;
+    sph_groestl512_context   ctx_groestl;
+    sph_jh512_context        ctx_jh;
+    sph_keccak512_context    ctx_keccak;
+    sph_skein512_context     ctx_skein;
+    static unsigned char pblank[1];
+
+    uint32_t hash[16];
+
+    int ii;
+    unsigned char * ptr = (unsigned char *)input;
+
+    printf("Input Hash : ");
+    for (ii = 0; ii < 128; ii++) {
+        printf("%.2x", ptr[ii]);
+    }
+    printf("\n");
+
+    sph_keccak512_init(&ctx_keccak);
+    sph_keccak512 (&ctx_keccak, input, 80);
+    sph_keccak512_close(&ctx_keccak, hash);
+
+    ptr = (unsigned char *)(&hash[0]);
+    if (opt_hashdebug) {
+       printf("After keccak : ");
+       for (ii = 0; ii < 64; ii++) {
+           printf("%.2x", ptr[ii]);
+       }
+       printf("\n");
+    }
+
+    int round;
+    for (round = 0; round < 8; round++) {
+        int method = hash[0] & 3;
+        switch (method) {
+          case 0:
+               sph_blake512_init(&ctx_blake);
+               sph_blake512 (&ctx_blake, hash, 64);
+               sph_blake512_close(&ctx_blake, hash);
+               break;
+          case 1:
+               sph_groestl512_init(&ctx_groestl);
+               sph_groestl512 (&ctx_groestl, hash, 64);
+               sph_groestl512_close(&ctx_groestl, hash);
+               break;
+          case 2:
+               sph_jh512_init(&ctx_jh);
+               sph_jh512 (&ctx_jh, hash, 64);
+               sph_jh512_close(&ctx_jh, hash);
+               break;
+          case 3:
+               sph_skein512_init(&ctx_skein);
+               sph_skein512 (&ctx_skein, hash, 64);
+               sph_skein512_close(&ctx_skein, hash);
+               break;
+        }
+        printf("ROUND %d by %d : ", round, method);
+        for (ii = 0; ii < 32; ii++) {
+            printf("%.2x", ptr[ii]);
+        }
+        printf("\n");
+    }
+	memcpy(state, hash, 32);
+}
+
 static void advsha3hash(void *state, const void *input) {
     sph_blake512_context     ctx_blake;
     sph_groestl512_context   ctx_groestl;
@@ -93,12 +159,17 @@ int scanhash_advsha3(int thr_id, uint32_t *pdata, const uint32_t *ptarget,	uint3
 	};
 	if (target <= 0xFFFF) {
        do {
-          data[19] = ++n;
+          pdata[19] = ++n;
           be32enc(&data[19], n);
           advsha3hash(hash, &data);
           if (hash[7] <= target)  {
              if (fulltest(hash, ptarget)) {
                 *hashes_done = n - first_nonce + 1;
+
+                if (opt_hashdebug) {
+                   printf(" Found nonce = %.8x \n", n);
+                   advsha3hash_debug (hash, &data);
+                }
                 return true;
              }
           }
