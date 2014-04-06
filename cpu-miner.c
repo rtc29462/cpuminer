@@ -1,11 +1,13 @@
 /*
  * Copyright 2010 Jeff Garzik
  * Copyright 2012-2013 pooler
+ * Copyright 2014 MKimID
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
  * Software Foundation; either version 2 of the License, or (at your option)
  * any later version.  See COPYING for more details.
+ *
  */
 
 #include "cpuminer-config.h"
@@ -38,9 +40,9 @@
 #include "compat.h"
 #include "miner.h"
 
-#define PROGRAM_NAME		"minerd"
-#define DEF_RPC_URL		"http://127.0.0.1:9332/"
-#define LP_SCANTIME		60
+#define PROGRAM_NAME          "minerd"
+#define DEF_RPC_URL	          "http://127.0.0.1:9332/"
+#define LP_SCANTIME           60
 
 #ifdef __linux /* Linux specific policy and affinity management */
 #include <sched.h>
@@ -56,68 +58,58 @@ static inline void drop_policy(void)
 #endif
 }
 
-static inline void affine_to_cpu(int id, int cpu)
-{
+static inline void affine_to_cpu(int id, int cpu) {
 	cpu_set_t set;
-
 	CPU_ZERO(&set);
 	CPU_SET(cpu, &set);
 	sched_setaffinity(0, sizeof(&set), &set);
 }
 #elif defined(__FreeBSD__) /* FreeBSD specific policy and affinity management */
 #include <sys/cpuset.h>
-static inline void drop_policy(void)
-{
+static inline void drop_policy(void) {
 }
 
-static inline void affine_to_cpu(int id, int cpu)
-{
+static inline void affine_to_cpu(int id, int cpu) {
 	cpuset_t set;
 	CPU_ZERO(&set);
 	CPU_SET(cpu, &set);
 	cpuset_setaffinity(CPU_LEVEL_WHICH, CPU_WHICH_CPUSET, -1, sizeof(cpuset_t), &set);
 }
 #else
-static inline void drop_policy(void)
-{
-}
-
-static inline void affine_to_cpu(int id, int cpu)
-{
-}
+static inline void drop_policy(void)              { }
+static inline void affine_to_cpu(int id, int cpu) { }
 #endif
 
 enum workio_commands {
-	WC_GET_WORK,
-	WC_SUBMIT_WORK,
+     WC_GET_WORK,
+     WC_SUBMIT_WORK,
 };
 
 struct workio_cmd {
-	enum workio_commands	cmd;
-	struct thr_info		*thr;
+	enum workio_commands cmd;
+	struct thr_info *thr;
 	union {
 		struct work	*work;
 	} u;
 };
 
 enum sha256_algos {
-    ALGO_SCRYPT,		/* scrypt(1024,1,1) */
-    ALGO_SHA256D,		/* SHA-256d */
+    ALGO_SCRYPT,        /* scrypt(1024,1,1) */
+    ALGO_SHA256D,       /* SHA-256d */
     ALGO_QUARK,         /* Quark Coin */
     ALGO_ADVSHA3,       /* Advanced SHA3 */
 };
 
 static const char *algo_names[] = {
-    [ALGO_SCRYPT]		= "scrypt",
-    [ALGO_SHA256D]		= "sha256d",
-    [ALGO_QUARK]		= "quark",
-    [ALGO_ADVSHA3]      = "advsha3",
+    [ALGO_SCRYPT]  = "scrypt",
+    [ALGO_SHA256D] = "sha256d",
+    [ALGO_QUARK]   = "quark",
+    [ALGO_ADVSHA3] = "advsha3",
 };
 
 bool opt_hashdebug = false;
 bool opt_debug = false;
 bool opt_protocol = false;
-static bool opt_benchmark = false;
 bool want_longpoll = true;
 bool have_longpoll = false;
 bool want_stratum = true;
@@ -173,7 +165,7 @@ Options:\n\
                           scrypt    scrypt(1024, 1, 1) (default)\n\
                           sha256d   SHA-256d\n\
                           quark     Quarkcoin\n\
-                          advsha3   Advanced SH3\n\
+                          advsha3   Advanced SHA3\n\
   -o, --url=URL         URL of mining server (default: " DEF_RPC_URL ")\n\
   -O, --userpass=U:P    username:password pair for mining server\n\
   -u, --user=USERNAME   username for mining server\n\
@@ -202,7 +194,6 @@ Options:\n\
   -B, --background      run the miner in the background\n"
 #endif
 "\
-      --benchmark       run in offline benchmark mode\n\
   -c, --config=FILE     load a JSON-format configuration file\n\
   -V, --version         display version information and exit\n\
   -h, --help            display this help text and exit\n\
@@ -222,7 +213,6 @@ static struct option const options[] = {
 #ifndef WIN32
 	{ "background", 0, NULL, 'B' },
 #endif
-	{ "benchmark", 0, NULL, 1005 },
 	{ "cert", 1, NULL, 1001 },
 	{ "config", 1, NULL, 'c' },
 	{ "debug", 0, NULL, 'D' },
@@ -252,7 +242,6 @@ static struct option const options[] = {
 struct work {
 	uint32_t data[32];
 	uint32_t target[8];
-
 	char job_id[128];
 	size_t xnonce2_len;
 	unsigned char xnonce2[32];
@@ -338,21 +327,17 @@ static bool submit_upstream_work(CURL *curl, struct work *work) {
 
 	/* pass if the previous hash is not the current previous hash */
 	if (!submit_old && memcmp(work->data + 1, g_work.data + 1, 32)) {
-		if (opt_debug || opt_hashdebug)
-		{
+		if (opt_debug || opt_hashdebug) {
 			applog(LOG_DEBUG, "DEBUG: stale work detected, discarding");
 			int ii=0;
-			for (ii=0; ii < 32; ii++)
-			{
+			for (ii=0; ii < 32; ii++) {
 				printf ("%.2x",((uint8_t*)(work->data + 1))[ii]);
 			};
 			printf ("\n");
-			for (ii=0; ii < 32; ii++)
-			{
+			for (ii=0; ii < 32; ii++)			{
 				printf ("%.2x",((uint8_t*)(g_work.data + 1))[ii]);
 			};
 			printf ("\n");
-
 		}
 		return true;
 	}
@@ -365,8 +350,8 @@ static bool submit_upstream_work(CURL *curl, struct work *work) {
 			return true;
 		le32enc(&ntime, work->data[17]);
 		le32enc(&nonce, work->data[19]);
-		ntimestr = bin2hex((const unsigned char *)(&ntime), 4);
-		noncestr = bin2hex((const unsigned char *)(&nonce), 4);
+		ntimestr   = bin2hex((const unsigned char *)(&ntime), 4);
+		noncestr   = bin2hex((const unsigned char *)(&nonce), 4);
 		xnonce2str = bin2hex(work->xnonce2, work->xnonce2_len);
 		sprintf(s,
 			"{\"method\": \"mining.submit\", \"params\": [\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"], \"id\":4}",
@@ -374,16 +359,13 @@ static bool submit_upstream_work(CURL *curl, struct work *work) {
 		free(ntimestr);
 		free(noncestr);
 		free(xnonce2str);
-
         if (opt_hashdebug) {
            printf("DEBUG: JSON-RPC Submit for stratum: %s", s);
         }
-
 		if (unlikely(!stratum_send_line(&stratum, s))) {
 			applog(LOG_ERR, "submit_upstream_work stratum_send_line failed");
 			goto out;
 		}
-
 	} else {
 		/* build hex string */
 		for (i = 0; i < ARRAY_SIZE(work->data); i++)
@@ -400,7 +382,7 @@ static bool submit_upstream_work(CURL *curl, struct work *work) {
 			str);
 
         if (opt_hashdebug) {
-           printf("DEBUG: JSON-RPC Submit: %s", s);
+           printf("DEBUG: JSON-RPC Submit for getwork: %s", s);
         }
 
 		/* issue JSON-RPC request */
@@ -413,7 +395,6 @@ static bool submit_upstream_work(CURL *curl, struct work *work) {
 		res = json_object_get(val, "result");
 		reason = json_object_get(val, "reject-reason");
 		share_result(json_is_true(res), reason ? json_string_value(reason) : NULL);
-
 		json_decref(val);
 	}
 
@@ -572,16 +553,6 @@ static bool get_work(struct thr_info *thr, struct work *work)
 	struct workio_cmd *wc;
 	struct work *work_heap;
 
-	if (opt_benchmark) {
-		memset(work->data, 0x55, 76);
-		work->data[17] = swab32(time(NULL));
-		memset(work->data + 19, 0x00, 52);
-		work->data[20] = 0x80000000;
-		work->data[31] = 0x00000280;
-		memset(work->target, 0x00, sizeof(work->target));
-		return true;
-	}
-
 	/* fill out work request message */
 	wc = calloc(1, sizeof(*wc));
 	if (!wc)
@@ -700,9 +671,6 @@ static void stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
        }
        printf ("\n");
     }
-
-
-
 }
 
 static void *miner_thread(void *userdata)
@@ -715,14 +683,6 @@ static void *miner_thread(void *userdata)
 	unsigned char *scratchbuf = NULL;
 	char s[16];
 	int i;
-
-	/* Set worker threads to nice 19 and then preferentially to SCHED_IDLE
-	 * and if that fails, then SCHED_BATCH. No need for this to be an
-	 * error if it fails */
-	if (!opt_benchmark) {
-		setpriority(PRIO_PROCESS, 0, 19);
-		drop_policy();
-	}
 
 	/* Cpu affinity only makes sense if the number of threads is a multiple
 	 * of the number of CPUs */
@@ -785,7 +745,7 @@ static void *miner_thread(void *userdata)
         }
 		max64 *= thr_hashrates[thr_id];
 		if (max64 <= 0) {
-			max64 = ((opt_algo == ALGO_SCRYPT) || (opt_algo == ALGO_ADVSHA3)) ? 0xfffLL : 0x1fffffLL;
+			max64 = ((opt_algo == ALGO_SCRYPT) || (opt_algo == ALGO_ADVSHA3)) ? 0xfffLL : 0xfffffLL;
         }
         if (work.data[19] + max64 > end_nonce) {
 			max_nonce = end_nonce;
@@ -828,19 +788,9 @@ static void *miner_thread(void *userdata)
 			sprintf(s, thr_hashrates[thr_id] >= 1e6 ? "%.0f" : "%.2f", 1e-3 * thr_hashrates[thr_id]);
 			applog(LOG_INFO, "thread %d: %lu hashes, %s khash/s", thr_id, hashes_done, s);
 		}
-		if (opt_benchmark && thr_id == opt_n_threads - 1) {
-			double hashrate = 0.;
-			for (i = 0; i < opt_n_threads && thr_hashrates[i]; i++) {
-				hashrate += thr_hashrates[i];
-            }
-			if (i == opt_n_threads) {
-				sprintf(s, hashrate >= 1e6 ? "%.0f" : "%.2f", 1e-3 * hashrate);
-				applog(LOG_INFO, "Total: %s khash/s", s);
-			}
-		}
 
 		/* if nonce found, submit work */
-		if (rc && !opt_benchmark && !submit_work(mythr, &work)) {
+		if (rc && !submit_work(mythr, &work)) {
 			break;
         }
 	}
@@ -851,21 +801,17 @@ out:
 	return NULL;
 }
 
-static void restart_threads(void)
-{
+static void restart_threads(void) {
 	int i;
-
 	for (i = 0; i < opt_n_threads; i++)
 		work_restart[i].restart = 1;
 }
 
-static void *longpoll_thread(void *userdata)
-{
+static void *longpoll_thread(void *userdata) {
 	struct thr_info *mythr = userdata;
 	CURL *curl = NULL;
 	char *copy_start, *hdr_path = NULL, *lp_url = NULL;
 	bool need_slash = false;
-
 	curl = curl_easy_init();
 	if (unlikely(!curl)) {
 		applog(LOG_ERR, "CURL initialization failed");
@@ -950,8 +896,7 @@ out:
 	return NULL;
 }
 
-static bool stratum_handle_response(char *buf)
-{
+static bool stratum_handle_response(char *buf) {
 	json_t *val, *err_val, *res_val, *id_val;
 	json_error_t err;
 	bool ret = false;
@@ -965,7 +910,6 @@ static bool stratum_handle_response(char *buf)
 	res_val = json_object_get(val, "result");
 	err_val = json_object_get(val, "error");
 	id_val = json_object_get(val, "id");
-
 	if (!id_val || json_is_null(id_val) || !res_val)
 		goto out;
 
@@ -980,8 +924,7 @@ out:
 	return ret;
 }
 
-static void *stratum_thread(void *userdata)
-{
+static void *stratum_thread(void *userdata) {
 	struct thr_info *mythr = userdata;
 	char *s;
 
@@ -1044,14 +987,12 @@ out:
 	return NULL;
 }
 
-static void show_version_and_exit(void)
-{
+static void show_version_and_exit(void) {
 	printf("%s\n%s\n", PACKAGE_STRING, curl_version());
 	exit(0);
 }
 
-static void show_usage_and_exit(int status)
-{
+static void show_usage_and_exit(int status) {
 	if (status)
 		fprintf(stderr, "Try `" PROGRAM_NAME " --help' for more information.\n");
 	else
@@ -1179,7 +1120,7 @@ static void parse_arg (int key, char *arg)
 			}
 			memmove(ap, p + 1, strlen(p + 1) + 1);
 		}
-		have_stratum = !opt_benchmark && !strncasecmp(rpc_url, "stratum", 7);
+		have_stratum = !strncasecmp(rpc_url, "stratum", 7);
 		break;
 	case 'O':			/* --userpass */
 		p = strchr(arg, ':');
@@ -1212,12 +1153,6 @@ static void parse_arg (int key, char *arg)
 	case 1001:
 		free(opt_cert);
 		opt_cert = strdup(arg);
-		break;
-	case 1005:
-		opt_benchmark = true;
-		want_longpoll = false;
-		want_stratum = false;
-		have_stratum = false;
 		break;
 	case 1003:
 		want_longpoll = false;
