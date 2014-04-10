@@ -59,7 +59,7 @@ static void advsha3hash_debug(void *state, const void *input) {
     printf("\n");
 
     sph_keccak512_init(&ctx_keccak);
-    sph_keccak512 (&ctx_keccak, input, 80);
+    sph_keccak512 (&ctx_keccak, input, 88);
     sph_keccak512_close(&ctx_keccak, hash);
 
     ptr = (unsigned char *)(&hash[0]);
@@ -72,7 +72,7 @@ static void advsha3hash_debug(void *state, const void *input) {
     }
 
     int round;
-    for (round = 0; round < 8; round++) {
+    for (round = 0; round < 4; round++) {
         int method = hash[0] & 3;
         switch (method) {
           case 0:
