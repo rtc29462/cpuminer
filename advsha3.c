@@ -63,16 +63,26 @@ static void advsha3hash_debug(void *state, const void *input) {
     sph_keccak512_close(&ctx_keccak, hash);
 
     ptr = (unsigned char *)(&hash[0]);
-    if (opt_hashdebug) {
-       printf("After keccak : ");
-       for (ii = 0; ii < 64; ii++) {
-           printf("%.2x", ptr[ii]);
-       }
-       printf("\n");
-    }
 
-    int round;
-    for (round = 0; round < 4; round++) {
+    printf("After keccak : ");
+    for (ii = 0; ii < 64; ii++) {
+        printf("%.2x", ptr[ii]);
+    }
+    printf("\n");
+
+    unsigned int round_mask = (
+       (unsigned int)(((unsigned char *)input)[84]) <<  0 |
+       (unsigned int)(((unsigned char *)input)[85]) <<  8 |
+       (unsigned int)(((unsigned char *)input)[86]) << 16 |
+       (unsigned int)(((unsigned char *)input)[87]) << 24 );
+    unsigned int round_max  = hash[0] & round_mask;
+    unsigned int round;
+
+
+    printf("round mask %.8x \n", round_mask);
+    printf("round max  %.8x \n", round_max);
+
+    for (round = 0; round < round_max; round++) {
         int method = hash[0] & 3;
         switch (method) {
           case 0:
@@ -111,16 +121,21 @@ static void advsha3hash(void *state, const void *input) {
     sph_jh512_context        ctx_jh;
     sph_keccak512_context    ctx_keccak;
     sph_skein512_context     ctx_skein;
-    static unsigned char pblank[1];
 
     uint32_t hash[16];
 
     sph_keccak512_init(&ctx_keccak);
-    sph_keccak512 (&ctx_keccak, input, 80);
+    sph_keccak512 (&ctx_keccak, input, 88);
     sph_keccak512_close(&ctx_keccak, hash);
 
-    int round;
-    for (round = 0; round < 8; round++) {
+    unsigned int round_mask = (
+       (unsigned int)(((unsigned char *)input)[84]) <<  0 |
+       (unsigned int)(((unsigned char *)input)[85]) <<  8 |
+       (unsigned int)(((unsigned char *)input)[86]) << 16 |
+       (unsigned int)(((unsigned char *)input)[87]) << 24 );
+    unsigned int round_max  = hash[0] & round_mask;
+    unsigned int round;
+    for (round = 0; round < round_max; round++) {
         switch (hash[0] & 3) {
           case 0:
                sph_blake512_init(&ctx_blake);
@@ -165,7 +180,6 @@ int scanhash_advsha3(int thr_id, uint32_t *pdata, const uint32_t *ptarget,	uint3
           if (hash[7] <= target)  {
              if (fulltest(hash, ptarget)) {
                 *hashes_done = n - first_nonce + 1;
-
                 if (opt_hashdebug) {
                    printf(" Found nonce = %.8x \n", n);
                    advsha3hash_debug (hash, &data);
