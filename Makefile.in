@@ -58,7 +58,7 @@ am_minerd_OBJECTS = cpu-miner.$(OBJEXT) util.$(OBJEXT) sha2.$(OBJEXT) \
 	scrypt.$(OBJEXT) scrypt-arm.$(OBJEXT) scrypt-x86.$(OBJEXT) \
 	scrypt-x64.$(OBJEXT) blake.$(OBJEXT) bmw.$(OBJEXT) \
 	groestl.$(OBJEXT) jh.$(OBJEXT) keccak.$(OBJEXT) \
-	skein.$(OBJEXT) quark.$(OBJEXT) advsha3.$(OBJEXT)
+	skein.$(OBJEXT) quark.$(OBJEXT) jackpot.$(OBJEXT)
 minerd_OBJECTS = $(am_minerd_OBJECTS)
 minerd_DEPENDENCIES =
 minerd_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(minerd_LDFLAGS) \
@@ -245,7 +245,7 @@ minerd_SOURCES = elist.h miner.h compat.h \
 		  scrypt.c scrypt-arm.S scrypt-x86.S scrypt-x64.S \
 		  blake.c bmw.c	groestl.c jh.c keccak.c skein.c \
 		  quark.c \
-          advsha3.c
+          jackpot.c
 
 minerd_LDFLAGS = $(PTHREAD_FLAGS)
 minerd_LDADD = @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
@@ -352,11 +352,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/advsha3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blake.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpu-miner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/groestl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jackpot.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jh.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keccak.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/quark.Po@am__quote@

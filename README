@@ -1,6 +1,9 @@
 This is the updated version of CPU Miner to support AdvSHA3 hashing method
-for PurpleCoin.
+for JackPotCoin.
 
+AdvSHA3 is the advanced hashing method for 
+   ultra secure but not slow
+   better CPU efficiency than GPU
 
 Git tree: https://github.com/rtc29462/cpuminer
 

@@ -58,7 +58,7 @@ am_minerd_OBJECTS = cpu-miner.$(OBJEXT) util.$(OBJEXT) sha2.$(OBJEXT) \
 	scrypt.$(OBJEXT) scrypt-arm.$(OBJEXT) scrypt-x86.$(OBJEXT) \
 	scrypt-x64.$(OBJEXT) blake.$(OBJEXT) bmw.$(OBJEXT) \
 	groestl.$(OBJEXT) jh.$(OBJEXT) keccak.$(OBJEXT) \
-	skein.$(OBJEXT) quark.$(OBJEXT) advsha3.$(OBJEXT)
+	skein.$(OBJEXT) quark.$(OBJEXT) jackpot.$(OBJEXT)
 minerd_OBJECTS = $(am_minerd_OBJECTS)
 minerd_DEPENDENCIES =
 minerd_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(minerd_LDFLAGS) \
@@ -245,7 +245,7 @@ minerd_SOURCES = elist.h miner.h compat.h \
 		  scrypt.c scrypt-arm.S scrypt-x86.S scrypt-x64.S \
 		  blake.c bmw.c	groestl.c jh.c keccak.c skein.c \
 		  quark.c \
-          advsha3.c
+          jackpot.c
 
 minerd_LDFLAGS = $(PTHREAD_FLAGS)
 minerd_LDADD = -lcurldll compat/jansson/libjansson.a -lpthread -lws2_32
@@ -352,11 +352,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/advsha3.Po
 include ./$(DEPDIR)/blake.Po
 include ./$(DEPDIR)/bmw.Po
 include ./$(DEPDIR)/cpu-miner.Po
 include ./$(DEPDIR)/groestl.Po
+include ./$(DEPDIR)/jackpot.Po
 include ./$(DEPDIR)/jh.Po
 include ./$(DEPDIR)/keccak.Po
 include ./$(DEPDIR)/quark.Po

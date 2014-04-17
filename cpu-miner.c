@@ -97,14 +97,14 @@ enum sha256_algos {
     ALGO_SCRYPT,        /* scrypt(1024,1,1) */
     ALGO_SHA256D,       /* SHA-256d */
     ALGO_QUARK,         /* Quark Coin */
-    ALGO_ADVSHA3,       /* Advanced SHA3 */
+    ALGO_JACKPOT,       /* JackPot Coin */
 };
 
 static const char *algo_names[] = {
     [ALGO_SCRYPT]  = "scrypt",
     [ALGO_SHA256D] = "sha256d",
     [ALGO_QUARK]   = "quark",
-    [ALGO_ADVSHA3] = "advsha3",
+    [ALGO_JACKPOT] = "jackpot",
 };
 
 bool opt_hashdebug = false;
@@ -124,7 +124,7 @@ int opt_timeout = 270;
 int opt_scantime = 5;
 static json_t *opt_config;
 static const bool opt_time = true;
-static enum sha256_algos opt_algo = ALGO_SCRYPT;
+static enum sha256_algos opt_algo = ALGO_JACKPOT;
 static int opt_n_threads;
 static int num_processors;
 static char *rpc_url;
@@ -165,7 +165,7 @@ Options:\n\
                           scrypt    scrypt(1024, 1, 1) (default)\n\
                           sha256d   SHA-256d\n\
                           quark     Quarkcoin\n\
-                          advsha3   Advanced SHA3\n\
+                          jackpot   Jackpotcoin\n\
   -o, --url=URL         URL of mining server (default: " DEF_RPC_URL ")\n\
   -O, --userpass=U:P    username:password pair for mining server\n\
   -u, --user=USERNAME   username for mining server\n\
@@ -301,12 +301,15 @@ static void share_result(int result, const char *reason) {
 
 	hashrate = 0.;
 	pthread_mutex_lock(&stats_lock);
-	for (i = 0; i < opt_n_threads; i++)
+
+	for (i = 0; i < opt_n_threads; i++) {
 		hashrate += thr_hashrates[i];
+    }
 	result ? accepted_count++ : rejected_count++;
 	pthread_mutex_unlock(&stats_lock);
 
 	sprintf(s, hashrate >= 1e6 ? "%.0f" : "%.2f", 1e-3 * hashrate);
+
 	applog(LOG_INFO, "accepted: %lu/%lu (%.2f%%), %s khash/s %s",
 		   accepted_count,
 		   accepted_count + rejected_count,
@@ -314,8 +317,9 @@ static void share_result(int result, const char *reason) {
 		   s,
 		   result ? "(yay!!!)" : "(booooo)");
 
-	if ((opt_debug || opt_hashdebug) && reason)
-		applog(LOG_DEBUG, "DEBUG: reject reason: %s", reason);
+	if ((opt_debug || opt_hashdebug) && reason) {
+		applog(LOG_DEBUG, "Reject reason: %s", reason);
+    }
 }
 
 static bool submit_upstream_work(CURL *curl, struct work *work) {
@@ -328,16 +332,18 @@ static bool submit_upstream_work(CURL *curl, struct work *work) {
 	/* pass if the previous hash is not the current previous hash */
 	if (!submit_old && memcmp(work->data + 1, g_work.data + 1, 32)) {
 		if (opt_debug || opt_hashdebug) {
-			applog(LOG_DEBUG, "DEBUG: stale work detected, discarding");
-			int ii=0;
-			for (ii=0; ii < 32; ii++) {
-				printf ("%.2x",((uint8_t*)(work->data + 1))[ii]);
-			};
-			printf ("\n");
-			for (ii=0; ii < 32; ii++)			{
-				printf ("%.2x",((uint8_t*)(g_work.data + 1))[ii]);
-			};
-			printf ("\n");
+			printf("stale work detected, discarding\n");
+            if (opt_hashdebug) {
+   			   int ii=0;
+		   	   for (ii=0; ii < 32; ii++) {
+				   printf ("%.2x",((uint8_t*)(work->data + 1))[ii]);
+			   };
+			   printf ("\n");
+			   for (ii=0; ii < 32; ii++)			{
+				   printf ("%.2x",((uint8_t*)(g_work.data + 1))[ii]);
+		 	   };
+			   printf ("\n");
+            }
 		}
 		return true;
 	}
@@ -346,8 +352,10 @@ static bool submit_upstream_work(CURL *curl, struct work *work) {
 		uint32_t ntime, nonce;
 		char *ntimestr, *noncestr, *xnonce2str;
 
-		if (!work->job_id)
+		if (!work->job_id) {
 			return true;
+        }
+
 		le32enc(&ntime, work->data[17]);
 		le32enc(&nonce, work->data[19]);
 		ntimestr   = bin2hex((const unsigned char *)(&ntime), 4);
@@ -359,8 +367,8 @@ static bool submit_upstream_work(CURL *curl, struct work *work) {
 		free(ntimestr);
 		free(noncestr);
 		free(xnonce2str);
-        if (opt_hashdebug) {
-           printf("DEBUG: JSON-RPC Submit for stratum: %s", s);
+        if ((opt_debug) && (opt_hashdebug)) {
+           printf("JSON-RPC Submit for stratum: %s \n", s);
         }
 		if (unlikely(!stratum_send_line(&stratum, s))) {
 			applog(LOG_ERR, "submit_upstream_work stratum_send_line failed");
@@ -381,8 +389,8 @@ static bool submit_upstream_work(CURL *curl, struct work *work) {
 			"{\"method\": \"getwork\", \"params\": [ \"%s\" ], \"id\":1}\r\n",
 			str);
 
-        if (opt_hashdebug) {
-           printf("DEBUG: JSON-RPC Submit for getwork: %s", s);
+        if (opt_debug && opt_hashdebug) {
+           printf("JSON-RPC Submit for getwork: %s \n", s);
         }
 
 		/* issue JSON-RPC request */
@@ -428,8 +436,7 @@ static bool get_upstream_work(CURL *curl, struct work *work) {
 
 	if (opt_debug && rc) {
 		timeval_subtract(&diff, &tv_end, &tv_start);
-		applog(LOG_DEBUG, "DEBUG: got new work in %d ms",
-		       diff.tv_sec * 1000 + diff.tv_usec / 1000);
+		applog(LOG_DEBUG, "Got new work in %d ms", diff.tv_sec * 1000 + diff.tv_usec / 1000);
 	}
 
 	json_decref(val);
@@ -459,8 +466,9 @@ static bool workio_get_work(struct workio_cmd *wc, CURL *curl)
 	int failures = 0;
 
 	ret_work = calloc(1, sizeof(*ret_work));
-	if (!ret_work)
+	if (!ret_work) {
 		return false;
+    }
 
 	/* obtain new work from bitcoin via JSON-RPC */
 	while (!get_upstream_work(curl, ret_work)) {
@@ -471,8 +479,7 @@ static bool workio_get_work(struct workio_cmd *wc, CURL *curl)
 		}
 
 		/* pause, then restart work-request loop */
-		applog(LOG_ERR, "json_rpc_call failed, retry after %d seconds",
-			opt_fail_pause);
+		applog(LOG_ERR, "json_rpc_call failed, retry after %d seconds",	opt_fail_pause);
 		sleep(opt_fail_pause);
 	}
 
@@ -569,14 +576,15 @@ static bool get_work(struct thr_info *thr, struct work *work)
 
 	/* wait for response, a unit of work */
 	work_heap = tq_pop(thr->q, NULL);
-	if (!work_heap)
+	if (!work_heap) {
 		return false;
+    }
 
 	/* copy returned work into storage provided by caller */
 	memcpy(work, work_heap, sizeof(*work));
 	free(work_heap);
 
-    if (opt_hashdebug) {
+    if (opt_debug && opt_hashdebug) {
        int ii = 0;
        printf ("\n get work data dump =>");
        for (ii = 0; ii < 128; ii++) {
@@ -653,21 +661,23 @@ static void stratum_gen_work(struct stratum_ctx *sctx, struct work *work)
 
 	if (opt_debug) {
 		char *xnonce2str = bin2hex(work->xnonce2, sctx->xnonce2_size);
-		applog(LOG_DEBUG, "DEBUG: job_id='%s' extranonce2=%s ntime=%08x",
+		applog(LOG_DEBUG, "Job_id='%s' extranonce2=%s ntime=%08x",
 		       work->job_id, xnonce2str, swab32(work->data[17]));
 		free(xnonce2str);
 	}
 
-	if ((opt_algo == ALGO_SCRYPT) || (opt_algo == ALGO_ADVSHA3))
+	if ((opt_algo == ALGO_SCRYPT) || (opt_algo == ALGO_JACKPOT)) {
 		diff_to_target(work->target, sctx->job.diff / 65536.0);
-	else
+    }
+	else {
 		diff_to_target(work->target, sctx->job.diff);
+    }
 
-    if (opt_hashdebug) {
+    if (opt_debug && opt_hashdebug) {
        int ii = 0;
        printf ("\n gen work data dump =>");
        for (ii = 0; ii < 128; i++) {
-		   	printf ("%.2x",((uint8_t * )(work->data))[ii]);
+		   printf ("%.2x",((uint8_t * )(work->data))[ii]);
        }
        printf ("\n");
     }
@@ -745,7 +755,7 @@ static void *miner_thread(void *userdata)
         }
 		max64 *= thr_hashrates[thr_id];
 		if (max64 <= 0) {
-			max64 = ((opt_algo == ALGO_SCRYPT) || (opt_algo == ALGO_ADVSHA3)) ? 0xfffLL : 0xfffffLL;
+			max64 = ((opt_algo == ALGO_SCRYPT) || (opt_algo == ALGO_JACKPOT)) ? 0x1fffLL : 0xfffffLL;
         }
         if (work.data[19] + max64 > end_nonce) {
 			max_nonce = end_nonce;
@@ -768,8 +778,8 @@ static void *miner_thread(void *userdata)
 		case ALGO_QUARK:
 			rc = scanhash_quark(thr_id, work.data, work.target, max_nonce, &hashes_done);
 			break;
-        case ALGO_ADVSHA3:
-            rc = scanhash_advsha3(thr_id, work.data, work.target, max_nonce, &hashes_done);
+        case ALGO_JACKPOT:
+            rc = scanhash_jackpot(thr_id, work.data, work.target, max_nonce, &hashes_done);
             break;
 		default:
 			/* should never happen */
@@ -861,8 +871,9 @@ start:
 			submit_old = soval ? json_is_true(soval) : false;
 			pthread_mutex_lock(&g_work_lock);
 			if (work_decode(json_object_get(val, "result"), &g_work)) {
-				if (opt_debug)
-					applog(LOG_DEBUG, "DEBUG: got new work");
+               if (opt_debug) {
+				  applog(LOG_DEBUG, "Got new work");
+               }
 				time(&g_work_time);
 				restart_threads();
 			}
@@ -1260,8 +1271,7 @@ int main(int argc, char *argv[])
 	/* parse command line */
 	parse_cmdline(argc, argv);
 
-	if (opt_algo==ALGO_QUARK)
-	{
+	if (opt_algo==ALGO_QUARK) {
 		init_quarkhash_contexts();
 	}
 

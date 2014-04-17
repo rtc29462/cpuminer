@@ -19,7 +19,7 @@ minerd_SOURCES	= elist.h miner.h compat.h \
 		  scrypt.c scrypt-arm.S scrypt-x86.S scrypt-x64.S \
 		  blake.c bmw.c	groestl.c jh.c keccak.c skein.c \
 		  quark.c \
-          advsha3.c
+          jackpot.c
 minerd_LDFLAGS	= $(PTHREAD_FLAGS)
 minerd_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
 

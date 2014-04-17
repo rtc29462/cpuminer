@@ -39,7 +39,7 @@
 #include "sph_skein.h"
 
 
-static void advsha3hash_debug(void *state, const void *input) {
+static void jackpothash_debug(void *state, const void *input) {
     sph_blake512_context     ctx_blake;
     sph_groestl512_context   ctx_groestl;
     sph_jh512_context        ctx_jh;
@@ -115,7 +115,7 @@ static void advsha3hash_debug(void *state, const void *input) {
 	memcpy(state, hash, 32);
 }
 
-static void advsha3hash(void *state, const void *input) {
+static void jackpothash(void *state, const void *input) {
     sph_blake512_context     ctx_blake;
     sph_groestl512_context   ctx_groestl;
     sph_jh512_context        ctx_jh;
@@ -162,7 +162,7 @@ static void advsha3hash(void *state, const void *input) {
 	memcpy(state, hash, 32);
 }
 
-int scanhash_advsha3(int thr_id, uint32_t *pdata, const uint32_t *ptarget,	uint32_t max_nonce, unsigned long *hashes_done) {
+int scanhash_jackpot(int thr_id, uint32_t *pdata, const uint32_t *ptarget, uint32_t max_nonce, unsigned long *hashes_done) {
 	uint32_t n = pdata[19] - 1;
 	const uint32_t first_nonce = pdata[19];
 	const uint32_t target = ptarget[7];
@@ -176,13 +176,13 @@ int scanhash_advsha3(int thr_id, uint32_t *pdata, const uint32_t *ptarget,	uint3
        do {
           pdata[19] = ++n;
           be32enc(&data[19], n);
-          advsha3hash(hash, &data);
+          jackpothash(hash, &data);
           if (hash[7] <= target)  {
              if (fulltest(hash, ptarget)) {
                 *hashes_done = n - first_nonce + 1;
                 if (opt_hashdebug) {
                    printf(" Found nonce = %.8x \n", n);
-                   advsha3hash_debug (hash, &data);
+                   jackpothash_debug (hash, &data);
                 }
                 return true;
              }
@@ -193,7 +193,7 @@ int scanhash_advsha3(int thr_id, uint32_t *pdata, const uint32_t *ptarget,	uint3
 	   do {
 		  pdata[19] = ++n;
 	  	  be32enc(&data[19], n);
-		  advsha3hash(hash, &data);
+		  jackpothash(hash, &data);
 		  if (fulltest(hash, ptarget)) {
 			  *hashes_done = n - first_nonce + 1;
 			  return true;
