@@ -133,9 +133,16 @@ static void jackpothash(void *state, const void *input) {
        (unsigned int)(((unsigned char *)input)[85]) <<  8 |
        (unsigned int)(((unsigned char *)input)[86]) << 16 |
        (unsigned int)(((unsigned char *)input)[87]) << 24 );
-    unsigned int round_max  = hash[0] & round_mask;
+       
+    unsigned int rounds  = hash[0] & round_mask;
+     
+    if (rounds != 0) {
+       hash[7] = 0xFFFFFFFF;
+    }
+    
+    /*
     unsigned int round;
-    for (round = 0; round < round_max; round++) {
+    for (round = 0; round < rounds; round++) {
         switch (hash[0] & 3) {
           case 0:
                sph_blake512_init(&ctx_blake);
@@ -159,6 +166,7 @@ static void jackpothash(void *state, const void *input) {
                break;
         }
     }
+    */
 	memcpy(state, hash, 32);
 }
 
