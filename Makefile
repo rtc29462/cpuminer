@@ -127,7 +127,7 @@ GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = ${SHELL} /home/Administrator/cpuminer/missing --run aclocal-1.11
-ALLOCA =
+ALLOCA = 
 AMTAR = ${SHELL} /home/Administrator/cpuminer/missing --run tar
 AUTOCONF = ${SHELL} /home/Administrator/cpuminer/missing --run autoconf
 AUTOHEADER = ${SHELL} /home/Administrator/cpuminer/missing --run autoheader
@@ -136,17 +136,17 @@ AWK = gawk
 CC = gcc -std=gnu99
 CCAS = gcc -std=gnu99
 CCASDEPMODE = depmode=gcc3
-CCASFLAGS = -O3
+CCASFLAGS = -O3 -msse2
 CCDEPMODE = depmode=gcc3
-CFLAGS = -O3
+CFLAGS = -O3 -msse2
 CPP = gcc -std=gnu99 -E
-CPPFLAGS =
+CPPFLAGS = 
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
-ECHO_C =
+ECHO_C = 
 ECHO_N = -n
-ECHO_T =
+ECHO_T = 
 EGREP = /bin/grep -E
 EXEEXT = .exe
 GREP = /bin/grep
@@ -156,28 +156,28 @@ INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 JANSSON_LIBS = compat/jansson/libjansson.a
-LDFLAGS =
-LIBOBJS =
-LIBS =
-LTLIBOBJS =
+LDFLAGS = 
+LIBOBJS = 
+LIBS = 
+LTLIBOBJS = 
 MAINT = #
 MAKEINFO = ${SHELL} /home/Administrator/cpuminer/missing --run makeinfo
 MKDIR_P = /bin/mkdir -p
 OBJEXT = o
 PACKAGE = cpuminer
-PACKAGE_BUGREPORT =
+PACKAGE_BUGREPORT = 
 PACKAGE_NAME = cpuminer
 PACKAGE_STRING = cpuminer 2.3.2
 PACKAGE_TARNAME = cpuminer
-PACKAGE_URL =
+PACKAGE_URL = 
 PACKAGE_VERSION = 2.3.2
 PATH_SEPARATOR = :
-PTHREAD_FLAGS =
+PTHREAD_FLAGS = 
 PTHREAD_LIBS = -lpthread
 RANLIB = ranlib
-SET_MAKE =
+SET_MAKE = 
 SHELL = /bin/sh
-STRIP =
+STRIP = 
 VERSION = 2.3.2
 WS2_LIBS = -lws2_32
 abs_builddir = /home/Administrator/cpuminer
@@ -187,12 +187,12 @@ abs_top_srcdir = /home/Administrator/cpuminer
 ac_ct_CC = gcc
 am__include = include
 am__leading_dot = .
-am__quote =
+am__quote = 
 am__tar = ${AMTAR} chof - "$$tardir"
 am__untar = ${AMTAR} xf -
 bindir = ${exec_prefix}/bin
 build = i686-pc-mingw32
-build_alias =
+build_alias = 
 build_cpu = i686
 build_os = mingw32
 build_vendor = pc
@@ -203,7 +203,7 @@ docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
 host = i686-pc-mingw32
-host_alias =
+host_alias = 
 host_cpu = i686
 host_os = mingw32
 host_vendor = pc
@@ -227,14 +227,14 @@ sharedstatedir = ${prefix}/com
 srcdir = .
 sysconfdir = ${prefix}/etc
 target = i686-pc-mingw32
-target_alias =
+target_alias = 
 target_cpu = i686
 target_os = mingw32
 target_vendor = pc
-top_build_prefix =
+top_build_prefix = 
 top_builddir = .
 top_srcdir = .
-#JANSSON_INCLUDES =
+#JANSSON_INCLUDES = 
 JANSSON_INCLUDES = -I$(top_srcdir)/compat/jansson
 EXTRA_DIST = example-cfg.json nomacro.pl
 SUBDIRS = compat
@@ -298,7 +298,7 @@ cpuminer-config.h: stamp-h1
 stamp-h1: $(srcdir)/cpuminer-config.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status cpuminer-config.h
-$(srcdir)/cpuminer-config.h.in: # $(am__configure_deps)
+$(srcdir)/cpuminer-config.h.in: # $(am__configure_deps) 
 	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
 	rm -f stamp-h1
 	touch $@
@@ -342,7 +342,7 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-minerd$(EXEEXT): $(minerd_OBJECTS) $(minerd_DEPENDENCIES)
+minerd$(EXEEXT): $(minerd_OBJECTS) $(minerd_DEPENDENCIES) 
 	@rm -f minerd$(EXEEXT)
 	$(minerd_LINK) $(minerd_OBJECTS) $(minerd_LDADD) $(LIBS)
 

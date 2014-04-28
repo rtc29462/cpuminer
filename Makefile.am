@@ -21,6 +21,6 @@ minerd_SOURCES	= elist.h miner.h compat.h \
 		  quark.c \
           jackpot.c
 minerd_LDFLAGS	= $(PTHREAD_FLAGS)
-minerd_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
+minerd_LDADD	= -lcurldll @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
 
 

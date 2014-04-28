@@ -248,7 +248,7 @@ minerd_SOURCES = elist.h miner.h compat.h \
           jackpot.c
 
 minerd_LDFLAGS = $(PTHREAD_FLAGS)
-minerd_LDADD = @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
+minerd_LDADD = -lcurldll @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@
 all: cpuminer-config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
