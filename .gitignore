@@ -6,9 +6,8 @@ autom4te.cache/
 *.lo
 *.lpo
 .*
-stamp-h1
-*.in~
 *.exe
+
 
 #################
 ## Eclipse
